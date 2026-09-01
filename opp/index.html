@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"><title>AB Renov · Capture</title></head>
+<body><div id="boot" style="font-family:Arial,Helvetica,sans-serif;padding:30px;text-align:center;color:#172554">Chargement AB OPPORTUNITÉS…</div>
+<script>
+(async()=>{try{
+  const base='https://raw.githubusercontent.com/abrenov35/ab-opp/6697631626b47d4bcaecb74ec3247ace39f4e9e2/index.html';
+  let src=await(await fetch(base,{cache:'no-store'})).text();
+  src=src.replace("'<span class=\"app-version\">v4</span>','<span class=\"app-version\">v18</span>'","'<span class=\"app-version\">v4</span>','<span class=\"app-version\">v21</span>'");
+  const marker='document.open();document.write(html);document.close();';
+  const extra=`html=html.replace('</head>',\`<style>
+.required-entry-grid label:has(#quickNom){grid-column:1/-1!important}
+.required-entry-grid label:has(#quickTel){grid-column:1!important}
+.required-entry-grid label:has(#quickTel2){grid-column:2!important}
+.required-entry-grid label:has(#quickEmail){grid-column:1!important}
+.required-entry-grid label:has(#quickEmail2){grid-column:2!important}
+.fields-grid .field-group:has(#rTel),.fields-grid .field-group:has(#rTel2),.fields-grid .field-group:has(#rEmail),.fields-grid .field-group:has(#rEmail2){grid-column:auto!important}
+.opp-pj-box{grid-column:1/-1;border:1px dashed #b7c4d3;border-radius:10px;padding:11px 12px;background:#f8fafc;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.opp-pj-btn{border:1px solid #c8d3df;background:#fff;color:#24436b;border-radius:8px;padding:9px 13px;font:700 12px Arial,sans-serif;cursor:pointer;white-space:nowrap}
+.opp-pj-btn:hover{background:#eef4fa}.opp-pj-info{font-size:11px;color:#65758a;flex:1;min-width:150px}.opp-pj-box .pj-list{width:100%;margin-top:2px}.opp-pj-box .pj-total{width:100%;margin-top:0}
+@media(max-width:600px){.opp-pj-box{align-items:stretch}.opp-pj-btn{width:100%}}
+</style></head>\`);
+html=html.replace('<label class="wide">Projet *<textarea id="quickProjet" rows="2" placeholder="Décrivez brièvement le projet"></textarea></label></div></div>','<label class="wide">Projet *<textarea id="quickProjet" rows="2" placeholder="Décrivez brièvement le projet"></textarea></label><div class="opp-pj-box"><button id="pjPickBtn" class="opp-pj-btn" type="button">📎 Ajouter des pièces</button><input id="pjInput" type="file" multiple accept=".pdf,.jpg,.jpeg,.png,.gif,.zip,application/pdf,image/*,application/zip" style="display:none"><span class="opp-pj-info">Facultatif — les fichiers seront déposés dans le dossier Dropbox créé pour l’opportunité.</span><div id="pjList" class="pj-list"></div><div id="pjTotal" class="pj-total"></div></div></div></div>');
+`;
+  if(!src.includes(marker))throw new Error('Point insertion pièces jointes introuvable');
+  src=src.replace(marker,extra+marker);
+  document.open();document.write(src);document.close();
+}catch(e){document.getElementById('boot').textContent='Erreur de chargement : '+e.message}})();
+</script></body></html>
