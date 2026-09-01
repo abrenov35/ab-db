@@ -6,9 +6,11 @@
   const opportunitiesBtn=document.getElementById('opportunitiesBtn');
   const dropboxView=document.getElementById('dropboxView');
   const opportunitiesView=document.getElementById('opportunitiesView');
+  const opportunitiesFrame=document.getElementById('opportunitiesFrame');
   const status=document.getElementById('status');
   const results=document.getElementById('results');
   let timer=null;
+  let opportunitiesLoaded=false;
 
   function setStatus(msg){status.textContent=msg||'';}
   function clearResults(){results.innerHTML='';}
@@ -71,13 +73,29 @@
     }
   }
 
-  function toggleOpportunities(){
+  async function loadOpportunities(){
+    if(opportunitiesLoaded) return;
+    opportunitiesFrame.srcdoc='<div style="font-family:Arial,sans-serif;padding:30px;text-align:center">Chargement AB OPPORTUNITÉS…</div>';
+    const url='https://raw.githubusercontent.com/abrenov35/ab-opp/main/index.html?ts='+Date.now();
+    const response=await fetch(url,{cache:'no-store'});
+    if(!response.ok) throw new Error('AB OPP HTTP '+response.status);
+    const html=await response.text();
+    opportunitiesFrame.srcdoc=html;
+    opportunitiesLoaded=true;
+  }
+
+  async function toggleOpportunities(){
     const opening=opportunitiesView.hidden;
     if(opening){
       dropboxView.hidden=true;
       opportunitiesView.hidden=false;
       refreshBtn.hidden=true;
       opportunitiesBtn.textContent='← Retour Dropbox';
+      try{
+        await loadOpportunities();
+      }catch(err){
+        opportunitiesFrame.srcdoc='<div style="font-family:Arial,sans-serif;padding:30px;color:#b91c1c"><strong>Erreur AB OPP</strong><br>'+escapeHtml(err.message)+'</div>';
+      }
     }else{
       opportunitiesView.hidden=true;
       dropboxView.hidden=false;
