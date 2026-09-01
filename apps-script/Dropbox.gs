@@ -1,11 +1,11 @@
 function abdbSearchDropboxFolders_(query){
   const cfg=abdbGetConfig_();
-  if(!cfg.token) throw new Error('Jeton Dropbox manquant dans les propriétés du script : '+ABDB.TOKEN_PROPERTY);
+  const token=abdbGetAccessToken_(cfg);
 
   const q=String(query||'').trim();
   if(q.length<2) return [];
 
-  const rootNamespaceId=abdbGetRootNamespaceId_(cfg.token);
+  const rootNamespaceId=abdbGetRootNamespaceId_(token);
 
   const payload={
     query:q,
@@ -18,7 +18,7 @@ function abdbSearchDropboxFolders_(query){
 
   if(!payload.options.path) delete payload.options.path;
 
-  const response=abdbDropboxPost_(ABDB.DROPBOX_SEARCH_URL,payload,cfg.token,rootNamespaceId);
+  const response=abdbDropboxPost_(ABDB.DROPBOX_SEARCH_URL,payload,token,rootNamespaceId);
   const data=JSON.parse(response||'{}');
   const seen={};
   const items=[];
@@ -33,7 +33,7 @@ function abdbSearchDropboxFolders_(query){
 
     abdbListSubfoldersRecursive_(
       meta.path_lower||meta.path_display,
-      cfg.token,
+      token,
       rootNamespaceId,
       items,
       seen
@@ -49,6 +49,49 @@ function abdbSearchDropboxFolders_(query){
   return items.slice(0,ABDB.MAX_RESULTS);
 }
 
+function abdbGetAccessToken_(cfg){
+  cfg=cfg||abdbGetConfig_();
+
+  if(cfg.appKey && cfg.appSecret && cfg.refreshToken){
+    const cache=CacheService.getScriptCache();
+    const cached=String(cache.get(ABDB.ACCESS_TOKEN_CACHE_KEY)||'').trim();
+    if(cached) return cached;
+
+    const basic=Utilities.base64Encode(cfg.appKey+':'+cfg.appSecret);
+    const response=UrlFetchApp.fetch(ABDB.DROPBOX_TOKEN_URL,{
+      method:'post',
+      contentType:'application/x-www-form-urlencoded',
+      headers:{Authorization:'Basic '+basic},
+      payload:{
+        grant_type:'refresh_token',
+        refresh_token:cfg.refreshToken
+      },
+      muteHttpExceptions:true
+    });
+
+    const code=response.getResponseCode();
+    const text=response.getContentText();
+    if(code<200 || code>=300){
+      throw new Error('Renouvellement Dropbox HTTP '+code+' : '+text.slice(0,500));
+    }
+
+    const data=JSON.parse(text||'{}');
+    const token=String(data.access_token||'').trim();
+    if(!token) throw new Error('Dropbox n’a pas renvoyé de nouvel access token.');
+
+    const expiresIn=Math.max(300,Number(data.expires_in||14400)-300);
+    cache.put(ABDB.ACCESS_TOKEN_CACHE_KEY,token,Math.min(expiresIn,21600));
+    return token;
+  }
+
+  if(cfg.token) return cfg.token;
+
+  throw new Error(
+    'Configuration Dropbox incomplète. Renseigne '+
+    ABDB.APP_KEY_PROPERTY+', '+ABDB.APP_SECRET_PROPERTY+' et '+ABDB.REFRESH_TOKEN_PROPERTY+'.'
+  );
+}
+
 function abdbGetRootNamespaceId_(token){
   const account=abdbGetAccount_(token);
   return String(account && account.root_info && account.root_info.root_namespace_id || '').trim();
@@ -57,7 +100,9 @@ function abdbGetRootNamespaceId_(token){
 function abdbGetAccount_(token){
   const response=UrlFetchApp.fetch(ABDB.DROPBOX_ACCOUNT_URL,{
     method:'post',
+    contentType:'application/json',
     headers:{Authorization:'Bearer '+token},
+    payload:'{}',
     muteHttpExceptions:true
   });
 
@@ -73,25 +118,26 @@ function abdbGetAccount_(token){
 
 function abdbDiagnosticDropbox_(){
   const cfg=abdbGetConfig_();
-  if(!cfg.token) throw new Error('Jeton Dropbox manquant');
+  const token=abdbGetAccessToken_(cfg);
 
-  const account=abdbGetAccount_(cfg.token);
+  const account=abdbGetAccount_(token);
   const rootInfo=account.root_info||{};
   const rootNamespaceId=String(rootInfo.root_namespace_id||'').trim();
   const homeNamespaceId=String(rootInfo.home_namespace_id||'').trim();
 
-  const rootEntries=abdbListOneLevel_('',cfg.token,rootNamespaceId);
+  const rootEntries=abdbListOneLevel_('',token,rootNamespaceId);
 
   let configuredEntries=[];
   let configuredError='';
   try{
-    configuredEntries=abdbListOneLevel_(cfg.rootPath,cfg.token,rootNamespaceId);
+    configuredEntries=abdbListOneLevel_(cfg.rootPath,token,rootNamespaceId);
   }catch(err){
     configuredError=String(err&&err.message?err.message:err);
   }
 
   return {
     ok:true,
+    auth_mode:(cfg.appKey&&cfg.appSecret&&cfg.refreshToken)?'refresh_token':'legacy_access_token',
     account:{
       name:account.name&&account.name.display_name||'',
       email:account.email||'',
