@@ -1,4 +1,5 @@
 const ABDB = Object.freeze({
+  DROPBOX_ACCOUNT_URL: 'https://api.dropboxapi.com/2/users/get_current_account',
   DROPBOX_SEARCH_URL: 'https://api.dropboxapi.com/2/files/search_v2',
   DROPBOX_LIST_URL: 'https://api.dropboxapi.com/2/files/list_folder',
   DROPBOX_LIST_CONTINUE_URL: 'https://api.dropboxapi.com/2/files/list_folder/continue',
