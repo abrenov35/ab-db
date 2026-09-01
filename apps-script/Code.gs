@@ -6,8 +6,10 @@ function doGet(e){
 
     if(action==='search'){
       data={ok:true,items:abdbSearchDropboxFolders_(p.q||'')};
+    }else if(action==='diagnostic'){
+      data=abdbDiagnosticDropbox_();
     }else if(action==='ping'){
-      data={ok:true,service:'AB DB',version:'2.0.0'};
+      data={ok:true,service:'AB DB',version:'2.1.0'};
     }else{
       data={ok:false,error:'Action inconnue'};
     }
