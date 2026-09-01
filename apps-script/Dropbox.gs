@@ -31,8 +31,6 @@ function abdbSearchDropboxFolders_(query){
 
     abdbPushFolder_(items,seen,meta);
 
-    // Dès qu'un dossier correspond à la recherche, on ajoute aussi
-    // tous ses sous-dossiers, quelle que soit leur profondeur.
     abdbListSubfoldersRecursive_(
       meta.path_lower||meta.path_display,
       cfg.token,
@@ -52,10 +50,11 @@ function abdbSearchDropboxFolders_(query){
 }
 
 function abdbGetRootNamespaceId_(token){
-  const cache=CacheService.getScriptCache();
-  const cached=cache.get('ABDB_ROOT_NAMESPACE_ID');
-  if(cached) return cached;
+  const account=abdbGetAccount_(token);
+  return String(account && account.root_info && account.root_info.root_namespace_id || '').trim();
+}
 
+function abdbGetAccount_(token){
   const response=UrlFetchApp.fetch(ABDB.DROPBOX_ACCOUNT_URL,{
     method:'post',
     headers:{Authorization:'Bearer '+token},
@@ -69,17 +68,64 @@ function abdbGetRootNamespaceId_(token){
     throw new Error('Dropbox compte HTTP '+code+' : '+text.slice(0,500));
   }
 
-  const data=JSON.parse(text||'{}');
-  const rootNamespaceId=String(
-    data && data.root_info && data.root_info.root_namespace_id || ''
-  ).trim();
+  return JSON.parse(text||'{}');
+}
 
-  if(!rootNamespaceId){
-    throw new Error('Dropbox : root_namespace_id introuvable pour ce compte.');
+function abdbDiagnosticDropbox_(){
+  const cfg=abdbGetConfig_();
+  if(!cfg.token) throw new Error('Jeton Dropbox manquant');
+
+  const account=abdbGetAccount_(cfg.token);
+  const rootInfo=account.root_info||{};
+  const rootNamespaceId=String(rootInfo.root_namespace_id||'').trim();
+  const homeNamespaceId=String(rootInfo.home_namespace_id||'').trim();
+
+  const rootEntries=abdbListOneLevel_('',cfg.token,rootNamespaceId);
+
+  let configuredEntries=[];
+  let configuredError='';
+  try{
+    configuredEntries=abdbListOneLevel_(cfg.rootPath,cfg.token,rootNamespaceId);
+  }catch(err){
+    configuredError=String(err&&err.message?err.message:err);
   }
 
-  cache.put('ABDB_ROOT_NAMESPACE_ID',rootNamespaceId,21600);
-  return rootNamespaceId;
+  return {
+    ok:true,
+    account:{
+      name:account.name&&account.name.display_name||'',
+      email:account.email||'',
+      root_info_tag:rootInfo['.tag']||'',
+      root_namespace_id:rootNamespaceId,
+      home_namespace_id:homeNamespaceId
+    },
+    configured_root_path:cfg.rootPath,
+    root_entries:rootEntries,
+    configured_entries:configuredEntries,
+    configured_error:configuredError
+  };
+}
+
+function abdbListOneLevel_(path,token,rootNamespaceId){
+  const data=JSON.parse(abdbDropboxPost_(ABDB.DROPBOX_LIST_URL,{
+    path:String(path||''),
+    recursive:false,
+    include_deleted:false,
+    include_has_explicit_shared_members:false,
+    include_mounted_folders:true,
+    limit:2000
+  },token,rootNamespaceId)||'{}');
+
+  return (data.entries||[])
+    .filter(function(meta){ return meta && meta['.tag']==='folder'; })
+    .map(function(meta){
+      return {
+        name:String(meta.name||''),
+        path_display:String(meta.path_display||''),
+        path_lower:String(meta.path_lower||''),
+        id:String(meta.id||'')
+      };
+    });
 }
 
 function abdbListSubfoldersRecursive_(path,token,rootNamespaceId,items,seen){
