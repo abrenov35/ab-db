@@ -13,20 +13,35 @@
         <h1>AB DB</h1>
         <p>Passerelle de recherche vers Dropbox</p>
       </div>
-      <button id="refreshBtn" class="secondary" type="button">Actualiser l’index</button>
+      <div class="toolbar-actions">
+        <button id="opportunitiesBtn" class="secondary" type="button">📋 Opportunités</button>
+        <button id="refreshBtn" class="secondary" type="button">Actualiser l’index</button>
+      </div>
     </header>
 
-    <section class="search-card">
-      <label for="searchInput">Rechercher un dossier Dropbox</label>
-      <div class="search-row">
-        <input id="searchInput" type="search" autocomplete="off" placeholder="Nom du client, chantier, dossier…">
-        <button id="searchBtn" type="button">Rechercher</button>
-      </div>
-      <p id="status" class="status">Saisis au moins 2 caractères.</p>
-    </section>
+    <div id="dropboxView">
+      <section class="search-card">
+        <label for="searchInput">Rechercher un dossier Dropbox</label>
+        <div class="search-row">
+          <input id="searchInput" type="search" autocomplete="off" placeholder="Nom du client, chantier, dossier…">
+          <button id="searchBtn" type="button">Rechercher</button>
+        </div>
+        <p id="status" class="status">Saisis au moins 2 caractères.</p>
+      </section>
 
-    <section>
-      <div id="results" class="results"></div>
+      <section>
+        <div id="results" class="results"></div>
+      </section>
+    </div>
+
+    <section id="opportunitiesView" class="opportunities-view" hidden>
+      <iframe
+        id="opportunitiesFrame"
+        title="AB Opportunités"
+        data-src="https://abrenov35.github.io/ab-opp/"
+        loading="lazy"
+        referrerpolicy="strict-origin-when-cross-origin">
+      </iframe>
     </section>
   </main>
 
