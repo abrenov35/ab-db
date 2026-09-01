@@ -6,11 +6,9 @@
   const opportunitiesBtn=document.getElementById('opportunitiesBtn');
   const dropboxView=document.getElementById('dropboxView');
   const opportunitiesView=document.getElementById('opportunitiesView');
-  const opportunitiesFrame=document.getElementById('opportunitiesFrame');
   const status=document.getElementById('status');
   const results=document.getElementById('results');
   let timer=null;
-  let opportunitiesLoaded=false;
 
   function setStatus(msg){status.textContent=msg||'';}
   function clearResults(){results.innerHTML='';}
@@ -75,12 +73,7 @@
 
   function toggleOpportunities(){
     const opening=opportunitiesView.hidden;
-
     if(opening){
-      if(!opportunitiesLoaded){
-        opportunitiesFrame.src=opportunitiesFrame.dataset.src;
-        opportunitiesLoaded=true;
-      }
       dropboxView.hidden=true;
       opportunitiesView.hidden=false;
       refreshBtn.hidden=true;
