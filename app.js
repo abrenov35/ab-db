@@ -3,9 +3,14 @@
   const input=document.getElementById('searchInput');
   const searchBtn=document.getElementById('searchBtn');
   const refreshBtn=document.getElementById('refreshBtn');
+  const opportunitiesBtn=document.getElementById('opportunitiesBtn');
+  const dropboxView=document.getElementById('dropboxView');
+  const opportunitiesView=document.getElementById('opportunitiesView');
+  const opportunitiesFrame=document.getElementById('opportunitiesFrame');
   const status=document.getElementById('status');
   const results=document.getElementById('results');
   let timer=null;
+  let opportunitiesLoaded=false;
 
   function setStatus(msg){status.textContent=msg||'';}
   function clearResults(){results.innerHTML='';}
@@ -68,8 +73,29 @@
     }
   }
 
+  function toggleOpportunities(){
+    const opening=opportunitiesView.hidden;
+
+    if(opening){
+      if(!opportunitiesLoaded){
+        opportunitiesFrame.src=opportunitiesFrame.dataset.src;
+        opportunitiesLoaded=true;
+      }
+      dropboxView.hidden=true;
+      opportunitiesView.hidden=false;
+      refreshBtn.hidden=true;
+      opportunitiesBtn.textContent='← Retour Dropbox';
+    }else{
+      opportunitiesView.hidden=true;
+      dropboxView.hidden=false;
+      refreshBtn.hidden=false;
+      opportunitiesBtn.textContent='📋 Opportunités';
+    }
+  }
+
   searchBtn.addEventListener('click',search);
   input.addEventListener('keydown',function(e){if(e.key==='Enter')search();});
   input.addEventListener('input',function(){clearTimeout(timer);timer=setTimeout(search,350);});
   refreshBtn.addEventListener('click',search);
+  opportunitiesBtn.addEventListener('click',toggleOpportunities);
 })();
