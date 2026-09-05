@@ -8,10 +8,12 @@ function doGet(e){
       data={ok:true,items:abdbSearchDropboxFolders_(p.q||'')};
     }else if(action==='opportunities'){
       data={ok:true,items:abdbGetOpportunityFolders_()};
+    }else if(action==='clientFolders'){
+      data={ok:true,items:abdbGetClientFolders_(p.folder||'')};
     }else if(action==='diagnostic'){
       data=abdbDiagnosticDropbox_();
     }else if(action==='ping'){
-      data={ok:true,service:'AB DB',version:'2.2.0'};
+      data={ok:true,service:'AB DB',version:'2.3.0'};
     }else{
       data={ok:false,error:'Action inconnue'};
     }
@@ -30,18 +32,45 @@ function abdbGetOpportunityFolders_(){
   const path=base+'/CLIENTS AB RENOV 35/OPPORTUNITES';
 
   return abdbListOneLevel_(path,token,rootNamespaceId)
-    .map(function(item){
-      return {
-        id:String(item.id||''),
-        name:String(item.name||''),
-        path_display:String(item.path_display||''),
-        path_lower:String(item.path_lower||''),
-        dropbox_url:abdbDropboxWebUrl_(item.path_display||item.path_lower||'')
-      };
-    })
-    .sort(function(a,b){
-      return String(a.name||'').localeCompare(String(b.name||''),'fr',{sensitivity:'base'});
-    });
+    .map(abdbMapFolder_)
+    .sort(abdbSortFolders_);
+}
+
+function abdbGetClientFolders_(folder){
+  const allowed={
+    PARTICULIERS:true,
+    PROFESSIONNELS:true,
+    AUTRES:true
+  };
+
+  const normalized=String(folder||'').trim().toUpperCase();
+  if(!allowed[normalized]){
+    throw new Error('Dossier client invalide');
+  }
+
+  const cfg=abdbGetConfig_();
+  const token=abdbGetAccessToken_(cfg);
+  const rootNamespaceId=abdbGetRootNamespaceId_(token);
+  const base=String(cfg.rootPath||'/AB RENOV 35').replace(/\/+$/,'');
+  const path=base+'/CLIENTS AB RENOV 35/'+normalized;
+
+  return abdbListOneLevel_(path,token,rootNamespaceId)
+    .map(abdbMapFolder_)
+    .sort(abdbSortFolders_);
+}
+
+function abdbMapFolder_(item){
+  return {
+    id:String(item.id||''),
+    name:String(item.name||''),
+    path_display:String(item.path_display||''),
+    path_lower:String(item.path_lower||''),
+    dropbox_url:abdbDropboxWebUrl_(item.path_display||item.path_lower||'')
+  };
+}
+
+function abdbSortFolders_(a,b){
+  return String(a.name||'').localeCompare(String(b.name||''),'fr',{sensitivity:'base'});
 }
 
 function abdbOutput_(data,callback){
