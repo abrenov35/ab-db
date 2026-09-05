@@ -6,11 +6,11 @@
   const opportunitiesBtn=document.getElementById('opportunitiesBtn');
   const dropboxView=document.getElementById('dropboxView');
   const opportunitiesView=document.getElementById('opportunitiesView');
-  const opportunitiesFrame=document.getElementById('opportunitiesFrame');
+  const opportunitiesList=document.getElementById('opportunitiesList');
+  const opportunitiesStatus=document.getElementById('opportunitiesStatus');
   const status=document.getElementById('status');
   const results=document.getElementById('results');
   let timer=null;
-  let opportunitiesLoaded=false;
 
   function setStatus(msg){status.textContent=msg||'';}
   function clearResults(){results.innerHTML='';}
@@ -32,6 +32,22 @@
         '<div class="result-main">'+
           '<div class="result-name">📁 '+escapeHtml(item.name)+'</div>'+
           '<div class="result-path">'+escapeHtml(item.path_display||item.path_lower||'')+'</div>'+
+        '</div>'+
+        '<a class="open-link" href="'+escapeHtml(item.dropbox_url||'#')+'" target="_blank" rel="noopener">Ouvrir Dropbox</a>'+
+      '</article>';
+    }).join('');
+  }
+
+  function renderOpportunities(items){
+    opportunitiesList.innerHTML='';
+    if(!items.length){
+      opportunitiesList.innerHTML='<div class="empty">Aucune opportunité à traiter.</div>';
+      return;
+    }
+    opportunitiesList.innerHTML=items.map(function(item){
+      return '<article class="result opportunity-result">'+
+        '<div class="result-main">'+
+          '<div class="result-name">📁 '+escapeHtml(item.name)+'</div>'+
         '</div>'+
         '<a class="open-link" href="'+escapeHtml(item.dropbox_url||'#')+'" target="_blank" rel="noopener">Ouvrir Dropbox</a>'+
       '</article>';
@@ -74,14 +90,18 @@
   }
 
   async function loadOpportunities(){
-    if(opportunitiesLoaded) return;
-    opportunitiesFrame.srcdoc='<div style="font-family:Arial,sans-serif;padding:30px;text-align:center">Chargement AB OPPORTUNITÉS…</div>';
-    const url='https://raw.githubusercontent.com/abrenov35/ab-opp/main/index.html?ts='+Date.now();
-    const response=await fetch(url,{cache:'no-store'});
-    if(!response.ok) throw new Error('AB OPP HTTP '+response.status);
-    const html=await response.text();
-    opportunitiesFrame.srcdoc=html;
-    opportunitiesLoaded=true;
+    opportunitiesStatus.textContent='Chargement des opportunités Dropbox…';
+    opportunitiesList.innerHTML='';
+    try{
+      const data=await jsonp({action:'opportunities'});
+      if(!data||!data.ok) throw new Error(data&&data.error?data.error:'Erreur inconnue');
+      const items=data.items||[];
+      renderOpportunities(items);
+      opportunitiesStatus.textContent=items.length+' opportunité(s) à traiter.';
+    }catch(err){
+      opportunitiesList.innerHTML='<div class="empty">Impossible de charger les opportunités.</div>';
+      opportunitiesStatus.textContent='Erreur : '+err.message;
+    }
   }
 
   async function toggleOpportunities(){
@@ -89,18 +109,14 @@
     if(opening){
       dropboxView.hidden=true;
       opportunitiesView.hidden=false;
-      refreshBtn.hidden=true;
-      opportunitiesBtn.textContent='← Retour Dropbox';
-      try{
-        await loadOpportunities();
-      }catch(err){
-        opportunitiesFrame.srcdoc='<div style="font-family:Arial,sans-serif;padding:30px;color:#b91c1c"><strong>Erreur AB OPP</strong><br>'+escapeHtml(err.message)+'</div>';
-      }
+      input.hidden=true;
+      opportunitiesBtn.textContent='← Retour recherche';
+      await loadOpportunities();
     }else{
       opportunitiesView.hidden=true;
       dropboxView.hidden=false;
-      refreshBtn.hidden=false;
-      opportunitiesBtn.textContent='📋 Opportunités';
+      input.hidden=false;
+      opportunitiesBtn.textContent='📋 Opportunités à traiter';
     }
   }
 
