@@ -13,7 +13,7 @@ function doGet(e){
     }else if(action==='diagnostic'){
       data=abdbDiagnosticDropbox_();
     }else if(action==='ping'){
-      data={ok:true,service:'AB DB',version:'2.3.1'};
+      data={ok:true,service:'AB DB',version:'2.3.2'};
     }else{
       data={ok:false,error:'Action inconnue'};
     }
@@ -52,11 +52,46 @@ function abdbGetClientFolders_(folder){
   const token=abdbGetAccessToken_(cfg);
   const rootNamespaceId=abdbGetRootNamespaceId_(token);
   const base=String(cfg.rootPath||'/AB RENOV 35').replace(/\/+$/,'');
-  const path=base+'/CLIENTS AB RENOV 35/• CLIENTS/• '+normalized;
+  const expectedPath=base+'/CLIENTS AB RENOV 35/• CLIENTS/• '+normalized;
 
-  return abdbListOneLevel_(path,token,rootNamespaceId)
+  // Dropbox renvoie bien ce chemin via search_v2, mais list_folder(path)
+  // peut retourner path/not_found sur cette arborescence Unicode. On résout
+  // donc d'abord le dossier exact, puis on liste ses enfants par son ID Dropbox.
+  const categoryId=abdbFindExactFolderId_(normalized,expectedPath,token,rootNamespaceId,cfg.rootPath);
+  if(!categoryId){
+    throw new Error('Dossier Dropbox introuvable : '+expectedPath);
+  }
+
+  return abdbListOneLevel_(categoryId,token,rootNamespaceId)
     .map(abdbMapFolder_)
     .sort(abdbSortFolders_);
+}
+
+function abdbFindExactFolderId_(query,expectedPath,token,rootNamespaceId,rootPath){
+  const payload={
+    query:String(query||''),
+    options:{
+      path:rootPath || undefined,
+      max_results:100,
+      filename_only:true
+    }
+  };
+  if(!payload.options.path) delete payload.options.path;
+
+  const data=JSON.parse(abdbDropboxPost_(ABDB.DROPBOX_SEARCH_URL,payload,token,rootNamespaceId)||'{}');
+  const expected=String(expectedPath||'').toLowerCase();
+
+  for(let i=0;i<(data.matches||[]).length;i++){
+    const meta=abdbExtractMetadata_(data.matches[i]);
+    if(!meta || meta['.tag']!=='folder') continue;
+
+    const path=String(meta.path_display||meta.path_lower||'').toLowerCase();
+    if(path===expected){
+      return String(meta.id||'');
+    }
+  }
+
+  return '';
 }
 
 function abdbMapFolder_(item){
