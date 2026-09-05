@@ -33,17 +33,7 @@
 
   async function search(){const q=input.value.trim();if(q.length<2){clearResults();setStatus('Saisis au moins 2 caractères.');return;}setStatus('Recherche Dropbox…');try{const data=await jsonp({action:'search',q:q});if(!data||!data.ok)throw new Error(data&&data.error?data.error:'Erreur inconnue');render(data.items||[]);setStatus((data.items||[]).length+' dossier(s) trouvé(s).');}catch(err){clearResults();setStatus('Erreur : '+err.message);}}
   async function loadOpportunities(){opportunitiesStatus.textContent='';opportunitiesList.innerHTML='';try{const data=await jsonp({action:'opportunities'});if(!data||!data.ok)throw new Error(data&&data.error?data.error:'Erreur inconnue');renderOpportunities(data.items||[]);opportunitiesStatus.textContent='';}catch(err){opportunitiesList.innerHTML='<div class="empty">Impossible de charger les opportunités.</div>';opportunitiesStatus.textContent='Erreur : '+err.message;}}
-
-  function openClientFolder(folder){
-    const allowed=['PARTICULIERS','PROFESSIONNELS','AUTRES'];
-    if(allowed.indexOf(folder)===-1)return;
-    clientFolderBtns.forEach(function(b){b.classList.toggle('active',b.dataset.folder===folder);});
-    clientsStatus.textContent='';
-    clientsResults.innerHTML='';
-    const path='/AB RENOV 35/CLIENTS AB RENOV 35/'+folder;
-    const url='https://www.dropbox.com/home'+path.split('/').map(function(part,i){return i===0?'':encodeURIComponent(part);}).join('/');
-    window.open(url,'_blank','noopener');
-  }
+  async function loadClientFolder(folder){clientFolderBtns.forEach(function(b){b.classList.toggle('active',b.dataset.folder===folder);});clientsStatus.textContent='';clientsResults.innerHTML='';try{const data=await jsonp({action:'clientFolders',folder:folder});if(!data||!data.ok)throw new Error(data&&data.error?data.error:'Erreur inconnue');const items=data.items||[];renderInto(clientsResults,items,'Aucun dossier dans '+folder+'.');clientsStatus.textContent='';}catch(err){clientsResults.innerHTML='<div class="empty">Impossible de charger les dossiers.</div>';clientsStatus.textContent='Erreur : '+err.message;}}
 
   async function loadAbOpp(){if(abOppLoaded)return;abOppFrame.srcdoc='<div style="font-family:Arial,sans-serif;padding:30px;text-align:center">Chargement AB OPPORTUNITÉS…</div>';try{const response=await fetch('https://raw.githubusercontent.com/abrenov35/ab-opp/main/index.html?ts='+Date.now(),{cache:'no-store'});if(!response.ok)throw new Error('AB OPP HTTP '+response.status);let src=await response.text();const hide='<style id="abdb-embedded-cleanup">.header,.topbar,.app-header{display:none!important}body{padding-top:0!important;margin-top:0!important}</style>';src=src.replace('</head>',hide+'</head>');abOppFrame.srcdoc=src;abOppLoaded=true;}catch(err){abOppFrame.srcdoc='<div style="font-family:Arial,sans-serif;padding:30px;color:#b91c1c"><strong>Erreur AB OPP</strong><br>'+escapeHtml(err.message)+'</div>';}}
 
@@ -54,7 +44,7 @@
   input.addEventListener('keydown',function(e){if(e.key==='Enter')search();});
   input.addEventListener('input',function(){clearTimeout(timer);timer=setTimeout(search,350);});
   clientsBtn.addEventListener('click',toggleClients);
-  clientFolderBtns.forEach(function(btn){btn.addEventListener('click',function(){openClientFolder(btn.dataset.folder);});});
+  clientFolderBtns.forEach(function(btn){btn.addEventListener('click',function(){loadClientFolder(btn.dataset.folder);});});
   opportunitiesBtn.addEventListener('click',toggleOpportunities);
   abOppBtn.addEventListener('click',toggleAbOpp);
 })();
