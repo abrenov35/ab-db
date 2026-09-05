@@ -28,8 +28,21 @@
   async function search(){const q=input.value.trim();if(q.length<2){clearResults();setStatus('Saisis au moins 2 caractères.');return;}setStatus('Recherche Dropbox…');try{const data=await jsonp({action:'search',q:q});if(!data||!data.ok)throw new Error(data&&data.error?data.error:'Erreur inconnue');render(data.items||[]);setStatus((data.items||[]).length+' dossier(s) trouvé(s).');}catch(err){clearResults();setStatus('Erreur : '+err.message);}}
   async function loadOpportunities(){opportunitiesStatus.textContent='Chargement des opportunités Dropbox…';opportunitiesList.innerHTML='';try{const data=await jsonp({action:'opportunities'});if(!data||!data.ok)throw new Error(data&&data.error?data.error:'Erreur inconnue');const items=data.items||[];renderOpportunities(items);opportunitiesStatus.textContent=items.length+' opportunité(s) à traiter.';}catch(err){opportunitiesList.innerHTML='<div class="empty">Impossible de charger les opportunités.</div>';opportunitiesStatus.textContent='Erreur : '+err.message;}}
 
+  async function loadAbOpp(){
+    if(abOppLoaded)return;
+    abOppFrame.srcdoc='<div style="font-family:Arial,sans-serif;padding:30px;text-align:center">Chargement AB OPPORTUNITÉS…</div>';
+    try{
+      const response=await fetch('https://raw.githubusercontent.com/abrenov35/ab-opp/main/index.html?ts='+Date.now(),{cache:'no-store'});
+      if(!response.ok)throw new Error('AB OPP HTTP '+response.status);
+      abOppFrame.srcdoc=await response.text();
+      abOppLoaded=true;
+    }catch(err){
+      abOppFrame.srcdoc='<div style="font-family:Arial,sans-serif;padding:30px;color:#b91c1c"><strong>Erreur AB OPP</strong><br>'+escapeHtml(err.message)+'</div>';
+    }
+  }
+
   async function toggleOpportunities(){if(!opportunitiesView.hidden){showOnly(dropboxView);resetButtons();return;}showOnly(opportunitiesView);input.hidden=true;abOppBtn.textContent='📋 Opportunités';opportunitiesBtn.textContent='← Retour recherche';await loadOpportunities();}
-  function toggleAbOpp(){if(!abOppView.hidden){showOnly(dropboxView);resetButtons();return;}showOnly(abOppView);input.hidden=true;opportunitiesBtn.textContent='📁 Opportunités à traiter';abOppBtn.textContent='← Retour recherche';if(!abOppLoaded){abOppFrame.src='https://abrenov35.github.io/ab-opp/';abOppLoaded=true;}}
+  async function toggleAbOpp(){if(!abOppView.hidden){showOnly(dropboxView);resetButtons();return;}showOnly(abOppView);input.hidden=true;opportunitiesBtn.textContent='📁 Opportunités à traiter';abOppBtn.textContent='← Retour recherche';await loadAbOpp();}
 
   input.addEventListener('keydown',function(e){if(e.key==='Enter')search();});
   input.addEventListener('input',function(){clearTimeout(timer);timer=setTimeout(search,350);});
