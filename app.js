@@ -15,6 +15,7 @@
   const opportunitiesStatus=document.getElementById('opportunitiesStatus');
   const status=document.getElementById('status');
   const results=document.getElementById('results');
+  const CACHE_PREFIX='ABDB_CACHE_V1_';
   let timer=null;
   let abOppLoaded=false;
 
@@ -23,6 +24,26 @@
   function escapeHtml(v){return String(v||'').replace(/[&<>\"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#39;'}[c];});}
   function showOnly(view){[dropboxView,clientsView,opportunitiesView,abOppView].forEach(function(v){v.hidden=v!==view;});}
   function clearActive(){clientFolderBtns.forEach(function(b){b.classList.remove('active');});}
+  function cacheKey(type,id){return CACHE_PREFIX+type+'_'+String(id||'').toUpperCase();}
+  function readCache(type,id){
+    try{
+      const raw=localStorage.getItem(cacheKey(type,id));
+      if(!raw)return null;
+      const data=JSON.parse(raw);
+      return data&&Array.isArray(data.items)?data.items:null;
+    }catch(e){return null;}
+  }
+  function writeCache(type,id,items){
+    try{localStorage.setItem(cacheKey(type,id),JSON.stringify({items:items||[],savedAt:Date.now()}));}catch(e){}
+  }
+  function itemsSignature(items){
+    return JSON.stringify((items||[]).map(function(x){return [x.id||'',x.name||'',x.path_display||x.path_lower||'',x.dropbox_url||''];}));
+  }
+  function sortItems(items){
+    return (items||[]).slice().sort(function(a,b){
+      return String(a.name||'').localeCompare(String(b.name||''),'fr',{sensitivity:'base'});
+    });
+  }
 
   function renderInto(target,items,emptyText){
     target.innerHTML='';
@@ -57,47 +78,70 @@
   async function search(){
     const q=input.value.trim();
     if(q.length<2){clearResults();setStatus('Saisis au moins 2 caractères.');return;}
-    showOnly(dropboxView);clearActive();setStatus('Recherche Dropbox…');
+    showOnly(dropboxView);clearActive();
+
+    const cached=readCache('SEARCH',q);
+    if(cached){render(cached);setStatus('');}
+    else{clearResults();setStatus('Recherche Dropbox…');}
+
     try{
       const data=await jsonp({action:'search',q:q});
       if(!data||!data.ok)throw new Error(data&&data.error?data.error:'Erreur inconnue');
-      render(data.items||[]);
+      const items=data.items||[];
+      if(!cached || itemsSignature(cached)!==itemsSignature(items))render(items);
+      writeCache('SEARCH',q,items);
       setStatus('');
-    }catch(err){clearResults();setStatus('Erreur : '+err.message);}
+    }catch(err){
+      if(!cached){clearResults();setStatus('Erreur : '+err.message);}
+    }
   }
 
   async function loadOpportunities(){
-    showOnly(opportunitiesView);clearActive();opportunitiesStatus.textContent='';opportunitiesList.innerHTML='';
+    showOnly(opportunitiesView);clearActive();opportunitiesStatus.textContent='';
+
+    const cached=readCache('OPPORTUNITIES','ALL');
+    if(cached){renderOpportunities(cached);}
+    else{opportunitiesList.innerHTML='';opportunitiesStatus.textContent='Chargement…';}
+
     try{
       const data=await jsonp({action:'opportunities'});
       if(!data||!data.ok)throw new Error(data&&data.error?data.error:'Erreur inconnue');
-      renderOpportunities(data.items||[]);
+      const items=sortItems(data.items||[]);
+      if(!cached || itemsSignature(cached)!==itemsSignature(items))renderOpportunities(items);
+      writeCache('OPPORTUNITIES','ALL',items);
       opportunitiesStatus.textContent='';
     }catch(err){
-      opportunitiesList.innerHTML='<div class="empty">Impossible de charger les opportunités.</div>';
-      opportunitiesStatus.textContent='Erreur : '+err.message;
+      if(!cached){opportunitiesList.innerHTML='<div class="empty">Impossible de charger les opportunités.</div>';opportunitiesStatus.textContent='Erreur : '+err.message;}
     }
   }
 
   async function loadClientFolder(folder){
     showOnly(clientsView);
     clientFolderBtns.forEach(function(b){b.classList.toggle('active',b.dataset.folder===folder);});
-    clientsStatus.textContent='Chargement des dossiers…';
-    clientsResults.innerHTML='';
+
+    const cached=readCache('CLIENTS',folder);
+    if(cached){
+      clientsStatus.textContent='';
+      renderInto(clientsResults,cached,'Aucun dossier dans '+folder+'.');
+    }else{
+      clientsStatus.textContent='Chargement des dossiers…';
+      clientsResults.innerHTML='';
+    }
 
     try{
       const data=await jsonp({action:'clientFolders',folder:folder});
       if(!data||!data.ok)throw new Error(data&&data.error?data.error:'Erreur inconnue');
-
-      const items=(data.items||[]).slice().sort(function(a,b){
-        return String(a.name||'').localeCompare(String(b.name||''),'fr',{sensitivity:'base'});
-      });
-
+      const items=sortItems(data.items||[]);
+      if(!cached || itemsSignature(cached)!==itemsSignature(items)){
+        renderInto(clientsResults,items,'Aucun dossier dans '+folder+'.');
+      }
+      writeCache('CLIENTS',folder,items);
       clientsStatus.textContent='';
-      renderInto(clientsResults,items,'Aucun dossier dans '+folder+'.');
     }catch(err){
-      clientsResults.innerHTML='<div class="empty">Impossible de charger les dossiers.</div>';
-      clientsStatus.textContent='Erreur : '+err.message;
+      if(!cached){
+        clientsResults.innerHTML='<div class="empty">Impossible de charger les dossiers.</div>';
+        clientsStatus.textContent='Erreur : '+err.message;
+      }
     }
   }
 
