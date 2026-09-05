@@ -16,6 +16,8 @@
     .topbar{
       display:flex!important;
       align-items:center!important;
+      justify-content:flex-start!important;
+      position:relative!important;
       gap:10px!important;
       min-height:58px!important;
       padding:7px 14px!important;
@@ -47,10 +49,15 @@
       opacity:.95!important;
     }
     .toolbar-actions{
-      margin-left:auto!important;
+      position:absolute!important;
+      left:50%!important;
+      transform:translateX(-50%)!important;
       display:flex!important;
       align-items:center!important;
+      justify-content:center!important;
       gap:8px!important;
+      margin:0!important;
+      white-space:nowrap!important;
     }
     .top-search{
       display:flex!important;
@@ -116,7 +123,12 @@
       .topbar{overflow-x:auto!important;white-space:nowrap}
       .topbar h1{font-size:19px!important}
       .topbar p{font-size:9px!important}
-      .toolbar-actions{flex:none!important}
+      .toolbar-actions{
+        position:static!important;
+        transform:none!important;
+        margin-left:auto!important;
+        flex:none!important;
+      }
       .top-search input{width:180px!important;min-width:180px!important}
     }
   </style>
