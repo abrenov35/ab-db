@@ -62,7 +62,7 @@
       const data=await jsonp({action:'search',q:q});
       if(!data||!data.ok)throw new Error(data&&data.error?data.error:'Erreur inconnue');
       render(data.items||[]);
-      setStatus((data.items||[]).length+' dossier(s) trouvé(s).');
+      setStatus('');
     }catch(err){clearResults();setStatus('Erreur : '+err.message);}
   }
 
