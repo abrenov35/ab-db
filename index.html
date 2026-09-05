@@ -10,8 +10,9 @@
     body{margin:0}.app-shell{max-width:none!important;margin:0!important;padding:0!important}
     .topbar{display:flex!important;align-items:center!important;justify-content:flex-start!important;position:relative!important;gap:10px!important;min-height:58px!important;padding:7px 14px!important;background:var(--ab-blue)!important;color:#fff!important;border-radius:0!important;box-shadow:0 2px 8px rgba(0,0,0,.18)!important}
     .topbar>div:first-child{display:flex!important;align-items:center!important;gap:7px!important;flex:0 0 auto!important}.topbar h1{margin:0!important;color:#fff!important;font-size:22px!important;line-height:1!important;font-weight:800!important}.topbar p{margin:0!important;color:#fff!important;font-size:10px!important;font-weight:700!important;letter-spacing:.7px!important;text-transform:uppercase!important;opacity:.95!important}
-    .toolbar-actions{position:absolute!important;left:50%!important;transform:translateX(-50%)!important;display:flex!important;align-items:center!important;justify-content:center!important;gap:8px!important;margin:0!important;white-space:nowrap!important}.top-search{display:flex!important;align-items:center!important}.top-search input{width:300px!important;min-width:220px!important;height:38px!important;padding:0 12px!important;border:0!important;border-radius:7px!important;background:#fff!important;color:#1b2430!important;outline:none!important}.top-search input:focus{box-shadow:0 0 0 2px rgba(242,180,0,.55)!important}.toolbar-actions button,.toolbar-actions a{white-space:nowrap!important;flex:none!important;min-height:38px!important;padding:9px 14px!important;border:1px solid rgba(255,255,255,.35)!important;border-radius:7px!important;background:var(--ab-blue-2)!important;color:#fff!important;font-weight:700!important;box-shadow:none!important;text-decoration:none!important;display:inline-flex!important;align-items:center!important;justify-content:center!important}.toolbar-actions button:hover,.toolbar-actions a:hover{background:#3b61b0!important}#opportunitiesBtn{border-bottom:3px solid var(--ab-yellow)!important}
+    .toolbar-actions{position:absolute!important;left:50%!important;transform:translateX(-50%)!important;display:flex!important;align-items:center!important;justify-content:center!important;gap:8px!important;margin:0!important;white-space:nowrap!important}.top-search{display:flex!important;align-items:center!important}.top-search input{width:300px!important;min-width:220px!important;height:38px!important;padding:0 12px!important;border:0!important;border-radius:7px!important;background:#fff!important;color:#1b2430!important;outline:none!important}.top-search input:focus{box-shadow:0 0 0 2px rgba(242,180,0,.55)!important}.toolbar-actions button{white-space:nowrap!important;flex:none!important;min-height:38px!important;padding:9px 14px!important;border:1px solid rgba(255,255,255,.35)!important;border-radius:7px!important;background:var(--ab-blue-2)!important;color:#fff!important;font-weight:700!important;box-shadow:none!important;display:inline-flex!important;align-items:center!important;justify-content:center!important}.toolbar-actions button:hover{background:#3b61b0!important}#opportunitiesBtn{border-bottom:3px solid var(--ab-yellow)!important}
     #dropboxView,.opportunities-view{max-width:1200px;margin:0 auto;padding:24px 18px}.search-card-compact{padding-top:0!important;margin-top:0!important}.opportunities-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px}.opportunities-head h2{margin:0;font-size:22px}.opportunities-status{font-size:13px;color:#667085}.opportunity-result .result-path{display:none}
+    .abopp-view{height:calc(100vh - 72px);background:#fff}.abopp-view iframe{display:block;width:100%;height:100%;border:0;background:#fff}
     @media(max-width:720px){.topbar{overflow-x:auto!important;white-space:nowrap}.topbar h1{font-size:19px!important}.topbar p{font-size:9px!important}.toolbar-actions{position:static!important;transform:none!important;margin-left:auto!important;flex:none!important}.top-search input{width:180px!important;min-width:180px!important}}
   </style>
 </head>
@@ -21,7 +22,7 @@
       <div><h1>AB DB</h1><p>AB RENOV 35</p></div>
       <div class="toolbar-actions">
         <div class="top-search"><input id="searchInput" type="search" autocomplete="off" placeholder="Rechercher un dossier..."></div>
-        <a id="abOppBtn" href="https://abrenov35.github.io/ab-opp/" target="_self">📋 Opportunités</a>
+        <button id="abOppBtn" type="button">📋 Opportunités</button>
         <button id="opportunitiesBtn" class="secondary" type="button">📁 Opportunités à traiter</button>
       </div>
     </header>
@@ -33,8 +34,11 @@
       <div class="opportunities-head"><h2>Opportunités à traiter</h2><div id="opportunitiesStatus" class="opportunities-status">Chargement…</div></div>
       <div id="opportunitiesList" class="results"></div>
     </section>
+    <section id="abOppView" class="abopp-view" hidden>
+      <iframe id="abOppFrame" title="AB Opportunités"></iframe>
+    </section>
   </main>
   <script src="config.js?v=20260901-4"></script>
-  <script src="app.js?v=20260905-2"></script>
+  <script src="app.js?v=20260905-3"></script>
 </body>
 </html>
