@@ -13,7 +13,7 @@ function doGet(e){
     }else if(action==='diagnostic'){
       data=abdbDiagnosticDropbox_();
     }else if(action==='ping'){
-      data={ok:true,service:'AB DB',version:'2.3.0'};
+      data={ok:true,service:'AB DB',version:'2.3.1'};
     }else{
       data={ok:false,error:'Action inconnue'};
     }
@@ -52,7 +52,7 @@ function abdbGetClientFolders_(folder){
   const token=abdbGetAccessToken_(cfg);
   const rootNamespaceId=abdbGetRootNamespaceId_(token);
   const base=String(cfg.rootPath||'/AB RENOV 35').replace(/\/+$/,'');
-  const path=base+'/CLIENTS AB RENOV 35/'+normalized;
+  const path=base+'/CLIENTS AB RENOV 35/• CLIENTS/• '+normalized;
 
   return abdbListOneLevel_(path,token,rootNamespaceId)
     .map(abdbMapFolder_)
