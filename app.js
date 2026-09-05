@@ -34,7 +34,10 @@
     try{
       const response=await fetch('https://raw.githubusercontent.com/abrenov35/ab-opp/main/index.html?ts='+Date.now(),{cache:'no-store'});
       if(!response.ok)throw new Error('AB OPP HTTP '+response.status);
-      abOppFrame.srcdoc=await response.text();
+      let src=await response.text();
+      const hide='<style id="abdb-embedded-cleanup">.header,.topbar,.app-header{display:none!important}body{padding-top:0!important;margin-top:0!important}</style>';
+      src=src.replace('</head>',hide+'</head>');
+      abOppFrame.srcdoc=src;
       abOppLoaded=true;
     }catch(err){
       abOppFrame.srcdoc='<div style="font-family:Arial,sans-serif;padding:30px;color:#b91c1c"><strong>Erreur AB OPP</strong><br>'+escapeHtml(err.message)+'</div>';
