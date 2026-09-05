@@ -21,7 +21,7 @@
 
   function setStatus(msg){status.textContent=msg||'';}
   function clearResults(){results.innerHTML='';}
-  function escapeHtml(v){return String(v||'').replace(/[&<>\"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#39;'}[c];});}
+  function escapeHtml(v){return String(v||'').replace(/[&<>\"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot',"'":'&#39;'}[c];});}
   function showOnly(view){[dropboxView,clientsView,opportunitiesView,abOppView].forEach(function(v){v.hidden=v!==view;});}
   function resetButtons(){clientsBtn.textContent='👥 Clients AB RENOV 35';abOppBtn.textContent='📋 Opportunités';opportunitiesBtn.textContent='📁 Opportunités à traiter';input.hidden=false;}
 
@@ -34,6 +34,8 @@
   async function search(){const q=input.value.trim();if(q.length<2){clearResults();setStatus('Saisis au moins 2 caractères.');return;}setStatus('Recherche Dropbox…');try{const data=await jsonp({action:'search',q:q});if(!data||!data.ok)throw new Error(data&&data.error?data.error:'Erreur inconnue');render(data.items||[]);setStatus((data.items||[]).length+' dossier(s) trouvé(s).');}catch(err){clearResults();setStatus('Erreur : '+err.message);}}
   async function loadOpportunities(){opportunitiesStatus.textContent='';opportunitiesList.innerHTML='';try{const data=await jsonp({action:'opportunities'});if(!data||!data.ok)throw new Error(data&&data.error?data.error:'Erreur inconnue');renderOpportunities(data.items||[]);opportunitiesStatus.textContent='';}catch(err){opportunitiesList.innerHTML='<div class="empty">Impossible de charger les opportunités.</div>';opportunitiesStatus.textContent='Erreur : '+err.message;}}
 
+  function normalizePath(v){return String(v||'').replace(/\\/g,'/').replace(/\/+$/,'').toLowerCase();}
+
   async function loadClientFolder(folder){
     clientFolderBtns.forEach(function(b){b.classList.toggle('active',b.dataset.folder===folder);});
     clientsStatus.textContent='';
@@ -41,15 +43,40 @@
     try{
       const data=await jsonp({action:'search',q:folder});
       if(!data||!data.ok)throw new Error(data&&data.error?data.error:'Erreur inconnue');
-      const parent=('/AB RENOV 35/CLIENTS AB RENOV 35/'+folder).toLowerCase();
-      const items=(data.items||[]).filter(function(item){
-        const path=String(item.path_display||item.path_lower||'').replace(/\/+$/,'');
-        const parts=path.split('/').filter(Boolean);
-        const parentPath='/' + parts.slice(0,-1).join('/');
-        return parentPath.toLowerCase()===parent;
-      }).sort(function(a,b){
+
+      const all=data.items||[];
+      const folderLower=String(folder||'').toLowerCase();
+      const category=all.find(function(item){
+        return String(item.name||'').trim().toLowerCase()===folderLower;
+      });
+
+      let parent='';
+      if(category){
+        parent=normalizePath(category.path_display||category.path_lower||'');
+      }
+
+      let items=[];
+      if(parent){
+        items=all.filter(function(item){
+          const path=normalizePath(item.path_display||item.path_lower||'');
+          if(!path || path===parent)return false;
+          const cut=path.lastIndexOf('/');
+          return cut>0 && path.slice(0,cut)===parent;
+        });
+      }else{
+        items=all.filter(function(item){
+          const path=normalizePath(item.path_display||item.path_lower||'');
+          const marker='/'+folderLower+'/';
+          const idx=path.indexOf(marker);
+          if(idx<0)return false;
+          return path.indexOf('/',idx+marker.length)===-1;
+        });
+      }
+
+      items.sort(function(a,b){
         return String(a.name||'').localeCompare(String(b.name||''),'fr',{sensitivity:'base'});
       });
+
       renderInto(clientsResults,items,'Aucun dossier dans '+folder+'.');
       clientsStatus.textContent='';
     }catch(err){
