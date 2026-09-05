@@ -42,7 +42,7 @@
       if(!cfg.API_URL){reject(new Error('API Apps Script non configurée'));return;}
       const cb='abdb_cb_'+Date.now()+'_'+Math.floor(Math.random()*100000);
       const script=document.createElement('script');
-      const timeout=setTimeout(function(){cleanup();reject(new Error('Délai dépassé'));},20000);
+      const timeout=setTimeout(function(){cleanup();reject(new Error('Délai dépassé'));},60000);
       function cleanup(){clearTimeout(timeout);delete window[cb];script.remove();}
       window[cb]=function(data){cleanup();resolve(data);};
       script.onerror=function(){cleanup();reject(new Error('Impossible de joindre Apps Script'));};
@@ -82,7 +82,7 @@
   async function loadClientFolder(folder){
     showOnly(clientsView);
     clientFolderBtns.forEach(function(b){b.classList.toggle('active',b.dataset.folder===folder);});
-    clientsStatus.textContent='';
+    clientsStatus.textContent='Chargement des dossiers…';
     clientsResults.innerHTML='';
 
     try{
@@ -93,6 +93,7 @@
         return String(a.name||'').localeCompare(String(b.name||''),'fr',{sensitivity:'base'});
       });
 
+      clientsStatus.textContent='';
       renderInto(clientsResults,items,'Aucun dossier dans '+folder+'.');
     }catch(err){
       clientsResults.innerHTML='<div class="empty">Impossible de charger les dossiers.</div>';
