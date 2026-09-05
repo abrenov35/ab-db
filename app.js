@@ -79,8 +79,6 @@
     }
   }
 
-  function normalizePath(v){return String(v||'').replace(/\\/g,'/').replace(/\/+$/,'').toLowerCase();}
-
   async function loadClientFolder(folder){
     showOnly(clientsView);
     clientFolderBtns.forEach(function(b){b.classList.toggle('active',b.dataset.folder===folder);});
@@ -88,29 +86,10 @@
     clientsResults.innerHTML='';
 
     try{
-      const data=await jsonp({action:'search',q:folder});
+      const data=await jsonp({action:'clientFolders',folder:folder});
       if(!data||!data.ok)throw new Error(data&&data.error?data.error:'Erreur inconnue');
 
-      const folderLower=String(folder||'').trim().toLowerCase();
-      const categoryMarker='/clients ab renov 35/'+folderLower+'/';
-      const seen={};
-      const items=[];
-
-      (data.items||[]).forEach(function(item){
-        const path=normalizePath(item.path_display||item.path_lower||'');
-        const idx=path.indexOf(categoryMarker);
-        if(idx<0)return;
-
-        const rest=path.slice(idx+categoryMarker.length);
-        if(!rest || rest.indexOf('/')!==-1)return;
-
-        const key=rest.toLowerCase();
-        if(seen[key])return;
-        seen[key]=true;
-        items.push(item);
-      });
-
-      items.sort(function(a,b){
+      const items=(data.items||[]).slice().sort(function(a,b){
         return String(a.name||'').localeCompare(String(b.name||''),'fr',{sensitivity:'base'});
       });
 
