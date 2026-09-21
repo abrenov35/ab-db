@@ -45,4 +45,5 @@
   clientFolderBtns.forEach(function(btn){btn.addEventListener('click',function(){loadClientFolder(btn.dataset.folder);});});
   opportunitiesBtn.addEventListener('click',loadOpportunities);
   abOppBtn.addEventListener('click',loadAbOpp);
+  if(new URLSearchParams(window.location.search).get('view')==='new-opportunity')loadAbOpp();
 })();
