@@ -39,7 +39,17 @@
   async function loadClientFolder(folder){showOnly(clientsView);clientFolderBtns.forEach(function(b){b.classList.toggle('active',b.dataset.folder===folder);});const cached=readCache('CLIENTS',folder);if(cached){clientsStatus.textContent='';renderInto(clientsResults,cached,'Aucun dossier dans '+folder+'.');}else{clientsStatus.textContent='Chargement des dossiers…';clientsResults.innerHTML='';}try{const data=await jsonp({action:'clientFolders',folder:folder});if(!data||!data.ok)throw new Error(data&&data.error?data.error:'Erreur inconnue');const items=sortItems(data.items||[]);if(!cached||itemsSignature(cached)!==itemsSignature(items)){renderInto(clientsResults,items,'Aucun dossier dans '+folder+'.');}writeCache('CLIENTS',folder,items);clientsStatus.textContent='';}catch(err){if(!cached){clientsResults.innerHTML='<div class="empty">Impossible de charger les dossiers.</div>';clientsStatus.textContent='Erreur : '+err.message;}}}
   async function loadAbOpp(){showOnly(abOppView);clearActive();if(abOppLoaded)return;abOppFrame.srcdoc='<div style="font-family:Arial,sans-serif;padding:30px;text-align:center">Chargement AB OPPORTUNITÉS…</div>';try{const response=await fetch('https://raw.githubusercontent.com/abrenov35/ab-opp/main/index.html?ts='+Date.now(),{cache:'no-store'});if(!response.ok)throw new Error('AB OPP HTTP '+response.status);let src=await response.text();if(new URLSearchParams(location.search).get('embed')==='yaya2'){src=src.replace('--ab-blue:#087cf0;','--ab-blue:#153f6b;').replace('--ab-green:#087443;--ab-green-dark:#05643a;','--ab-green:#153f6b;--ab-green-dark:#0f355b;').replace('background:linear-gradient(180deg,#2f80ed,#1769d2)','background:linear-gradient(180deg,#28699e,#153f6b)').replace('background:linear-gradient(180deg,#2475df,#105fc4)','background:linear-gradient(180deg,#235e91,#103657)').replace('border:1px solid #0759bd','border:1px solid #153f6b');}const hide='<style id="abdb-embedded-cleanup">.header,.topbar,.app-header{display:none!important}body{padding-top:0!important;margin-top:0!important}</style>';src=src.replace('</head>',hide+'</head>');abOppFrame.srcdoc=src;abOppLoaded=true;}catch(err){abOppFrame.srcdoc='<div style="font-family:Arial,sans-serif;padding:30px;color:#b91c1c"><strong>Erreur AB OPP</strong><br>'+escapeHtml(err.message)+'</div>';}}
 
-  window.addEventListener('message',function(e){if(!e.data||e.data.type!=='AB_OPP_HOME')return;if(new URLSearchParams(location.search).get('embed')==='yaya2'){window.parent.postMessage({type:'AB_OPP_DONE'},'*');return;}abOppLoaded=false;abOppFrame.srcdoc='';input.value='';clearResults();setStatus('');clearActive();showOnly(dropboxView);});
+  const yayaOrigin='https://yaya-2-ab-renov-35.abrenov35.chatgpt.site';
+  const yayaEmbedded=new URLSearchParams(location.search).get('embed')==='yaya2'&&window.parent!==window;
+  window.addEventListener('message',function(e){
+    if(!yayaEmbedded||!e.data)return;
+    if(e.source===abOppFrame.contentWindow&&e.origin===location.origin&&e.data.type==='AB_OPP_CREATE_AVANT'){
+      window.parent.postMessage(e.data,yayaOrigin);
+    }else if(e.source===window.parent&&e.origin===yayaOrigin&&e.data.type==='AB_OPP_AVANT_RESULT'){
+      abOppFrame.contentWindow.postMessage(e.data,location.origin);
+    }
+  });
+  window.addEventListener('message',function(e){if(e.source!==abOppFrame.contentWindow||e.origin!==location.origin||!e.data||e.data.type!=='AB_OPP_HOME')return;if(new URLSearchParams(location.search).get('embed')==='yaya2'){window.parent.postMessage({type:'AB_OPP_DONE'},yayaOrigin);return;}abOppLoaded=false;abOppFrame.srcdoc='';input.value='';clearResults();setStatus('');clearActive();showOnly(dropboxView);});
   input.addEventListener('keydown',function(e){if(e.key==='Enter')search();});
   input.addEventListener('input',function(){clearTimeout(timer);timer=setTimeout(search,350);});
   clientFolderBtns.forEach(function(btn){btn.addEventListener('click',function(){loadClientFolder(btn.dataset.folder);});});
@@ -47,3 +57,4 @@
   abOppBtn.addEventListener('click',loadAbOpp);
   if(new URLSearchParams(window.location.search).get('view')==='new-opportunity')loadAbOpp();
 })();
+
